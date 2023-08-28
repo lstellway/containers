@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  docker-gitlab-runner:
+    container_name: ${IMAGE_NAME}
+    image: ${IMAGE_NAME}:${IMAGE_TAG}
+    privileged: true
+    volumes:
+      - gitlab-runner-data:/home/rootless/.gitlab-runner
+
+volumes:
+  gitlab-runner-data:
+    name: gitlab-runner-data
