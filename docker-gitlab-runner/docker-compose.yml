@@ -3,6 +3,9 @@ services:
   docker-gitlab-runner:
     container_name: ${IMAGE_NAME}
     image: ${IMAGE_NAME}:${IMAGE_TAG}
+    # As of writing, the `privileged` option is required for Docker in Docker to function.
+    # Sysbox is an alternative runtime that removes the need for running as a privileged container:
+    # @see https://github.com/nestybox/sysbox#performance
     privileged: true
     volumes:
       - gitlab-runner-data:/home/rootless/.gitlab-runner
