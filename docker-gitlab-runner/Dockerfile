@@ -3,7 +3,8 @@ FROM docker:24.0.5-dind-rootless
 ENV \
   GITLAB_RUNNER_CONFIG=/home/rootless/.gitlab-runner/config.toml \
   GITLAB_RUNNER_WORKDIR=/var/lib/gitlab-runner \
-  GITLAB_RUNNER_SERVICE=gitlab-runner
+  GITLAB_RUNNER_SERVICE=gitlab-runner \
+  DOCKER_HOST=unix:///run/user/1000/docker.sock
 
 USER root
 
@@ -14,6 +15,7 @@ RUN apk add --no-cache \
 RUN cat <<EOF > /usr/local/bin/start-gitlab-runner
 #!/bin/sh
 /usr/bin/gitlab-runner run \\
+  --user rootless \\
   --config \${GITLAB_RUNNER_CONFIG} \\
   --working-directory \${GITLAB_RUNNER_WORKDIR} \\
   --service \${GITLAB_RUNNER_SERVICE}
