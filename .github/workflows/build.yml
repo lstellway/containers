@@ -1,0 +1,88 @@
+name: Build Docker Image
+
+on:
+  push:
+    tags: ["*"]
+  workflow_dispatch:
+    inputs:
+      build_tag:
+        required: true
+        description: The full container image tag (eg. `docker-gitlab-runner:0.1.0-alpha2`)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - docker-gitlab-runner
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Extract variables
+        id: variables
+        run: |
+          [ -n "${{ github.event.inputs.build_tag }}" ] && SOURCE_TAG="${{ github.event.inputs.build_tag }}" || SOURCE_TAG="${GITHUB_REF##*/}"
+          echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
+
+          IMAGE_VERSION="${SOURCE_TAG/${{ matrix.image }}:/}"
+          echo "IMAGE_VERSION=${IMAGE_VERSION}" >> $GITHUB_ENV
+
+          IMAGE_NAME="${SOURCE_TAG/:${IMAGE_VERSION}/}"
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+
+          echo "MATRIX_IMAGE=${{ matrix.image }}" >> $GITHUB_ENV
+
+          [ "${IMAGE_NAME}" = "${{ matrix.image }}" ] && PROCESS_IMAGE="true" || PROCESS_IMAGE="false"
+          echo "PROCESS_IMAGE=${PROCESS_IMAGE}" >> $GITHUB_ENV
+
+          DOCKERFILE="./${{ matrix.image }}/Dockerfile"
+          echo "DOCKERFILE=${DOCKERFILE}" >> $GITHUB_ENV
+
+          [ -f "${DOCKERFILE}" ] && DOCKERFILE_EXISTS="true" || DOCKERFILE_EXISTS="false"
+          echo "DOCKERFILE_EXISTS=${DOCKERFILE_EXISTS}" >> $GITHUB_ENV
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: ${{ env.DOCKERFILE_EXISTS == 'true' && env.PROCESS_IMAGE == 'true' }}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        if: ${{ env.DOCKERFILE_EXISTS == 'true' && env.PROCESS_IMAGE == 'true' }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          # password: ${{ github.token }}
+          password: ${{ secrets.GHCR_TOKEN }}
+          logout: true
+
+      # - name: Login to GitHub Container Registry
+      #   run: echo "${{ github.token }}" | docker login ghcr.io -u $ --password-stdin
+      #   if: ${{ env.DOCKERFILE_EXISTS == 'true' && env.PROCESS_IMAGE == 'true' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        if: ${{ env.DOCKERFILE_EXISTS == 'true' && env.PROCESS_IMAGE == 'true' }}
+        with:
+          context: .
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          # build-args: |
+          #   "ROOT_DIR=${{ secrets.ROOT_DIR }}"
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+          platforms: |
+            linux/amd64
+            linux/arm64
+          # linux/arm/v6
+          # linux/arm/v7
+          # linux/s390x
+          # linux/ppc64le
+
