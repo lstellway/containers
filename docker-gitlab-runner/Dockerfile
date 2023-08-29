@@ -1,4 +1,7 @@
 FROM docker:24.0.5-dind-rootless
+LABEL org.opencontainers.image.source=https://github.com/lstellway/containers
+LABEL org.opencontainers.image.description="A Docker-in-Docker container image containing GitLab Runner intended for use as a Docker executor"
+LABEL org.opencontainers.image.licenses=MIT
 
 ENV \
   GITLAB_RUNNER_CONFIG=/home/rootless/.gitlab-runner/config.toml \
