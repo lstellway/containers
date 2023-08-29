@@ -1,3 +1,4 @@
 {
+  "platforms": "linux/amd64,linux/arm64",
   "version": "0.0.1"
 }
