@@ -39,3 +39,14 @@ docker run --privileged \
     allowed_privileged_services = ["docker.io/library/docker:*-dind-rootless", "docker.io/library/docker:dind-rootless", "docker:*-dind-rootless", "docker:dind-rootless"]
     volumes = ["/cache", "/certs/client", "/var/lib/docker"]
 ```
+
+### Troubleshooting
+
+If you receive an error like this:
+
+```
+[rootlesskit:parent] error: failed to setup UID/GID map: newuidmap 4013 [0 1001 1 1 165536 65536] failed: newuidmap: write to uid_map failed: Operation not permitted
+```
+
+Edit `/etc/subuid` and `/etc/subgid` to ensure you [allocate a sufficient number of ID's](https://discuss.linuxcontainers.org/t/unable-to-run-rootless-docker-podman-under-a-rootless-lxd-container/15276/4) on the host machine for the user running Docker.
+
