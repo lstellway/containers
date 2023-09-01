@@ -80,7 +80,7 @@ jobs:
         uses: docker/build-push-action@v4
         if: ${{ env.PROCESS_IMAGE == 'true' }}
         with:
-          context: .
+          context: ${{ env.IMAGE_NAME }}
           file: ${{ env.DOCKERFILE }}
           push: true
           # build-args: |
