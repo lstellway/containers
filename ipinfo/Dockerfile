@@ -8,7 +8,7 @@ FROM golang:${GO_VERSION}-alpine as build
 ENV API_PORT=8080
 WORKDIR /go/src/app
 COPY ./src/* .
-RUN go build -o app main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o app main.go
 
 #######
 # RUN #
