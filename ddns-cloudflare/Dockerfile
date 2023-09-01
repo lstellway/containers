@@ -9,10 +9,11 @@ LABEL org.opencontainers.image.source=https://github.com/lstellway/containers
 LABEL org.opencontainers.image.description="Script written in Go to set DNS records for host in CloudFlare"
 LABEL org.opencontainers.image.licenses=MIT
 
-WORKDIR /go
-COPY ./src /go/appsrc
+WORKDIR /go/src/app
+COPY ./src/* .
+
 RUN apk add --no-cache git \
-    && go get github.com/cloudflare/cloudflare-go \
+    && go install \
     && go build -o app ./appsrc/*
 
 #######
