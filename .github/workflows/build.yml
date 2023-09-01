@@ -7,7 +7,7 @@ on:
     inputs:
       build_tag:
         required: true
-        description: The full container image tag (eg. `docker-gitlab-runner:0.1.0-alpha2`)
+        description: The full container image tag (eg. `docker-gitlab-runner_0.1.0-alpha2`)
 
 jobs:
   build:
@@ -25,11 +25,11 @@ jobs:
           echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
 
           # Target image name
-          IMAGE_NAME=$(echo $SOURCE_TAG | cut -d':' -f 1)
+          IMAGE_NAME=$(echo $SOURCE_TAG | cut -d'_' -f 1)
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
 
           # Target version (tag)
-          IMAGE_VERSION=$(echo $SOURCE_TAG | cut -d':' -f 2)
+          IMAGE_VERSION=$(echo $SOURCE_TAG | cut -d'_' -f 2)
           echo "IMAGE_VERSION=${IMAGE_VERSION}" >> $GITHUB_ENV
 
           # Relative path to the Dockerfile
