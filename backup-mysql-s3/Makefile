@@ -1,5 +1,5 @@
 include ../Makefile
 
-IMAGE_NAME=docker-gitlab-runner
+IMAGE_NAME=backup-mysql-s3
 IMAGE_TAG=dev
 

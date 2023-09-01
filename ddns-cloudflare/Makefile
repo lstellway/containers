@@ -1,5 +1,5 @@
 include ../Makefile
 
-IMAGE_NAME=docker-gitlab-runner
+IMAGE_NAME=ddns-cloudflare
 IMAGE_TAG=dev
 

@@ -1,5 +1,5 @@
 include ../Makefile
 
-IMAGE_NAME=docker-gitlab-runner
+IMAGE_NAME=s3fs-fuse
 IMAGE_TAG=dev
 
