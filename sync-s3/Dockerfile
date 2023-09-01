@@ -1,6 +1,10 @@
 ARG ALPINE_VERSION=3.17.5
 FROM alpine:${ALPINE_VERSION}
 
+LABEL org.opencontainers.image.source=https://github.com/lstellway/containers
+LABEL org.opencontainers.image.description="Docker container image used to backup data to S3 using AWS cli"
+LABEL org.opencontainers.image.licenses=MIT
+
 # Environment variables
 # This script utilizes the AWS command-line interface program
 # As a result, this program supports related environment variables:

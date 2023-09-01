@@ -3,6 +3,10 @@ ARG ALPINE_VERSION=3.17.5
 FROM alpine:${ALPINE_VERSION} as builder
 ARG S3FS_VERSION=1.93
 
+LABEL org.opencontainers.image.source=https://github.com/lstellway/containers
+LABEL org.opencontainers.image.description="A container intended to mount an S3 bucket via FUSE"
+LABEL org.opencontainers.image.licenses=MIT
+
 # Install dependencies
 RUN \
     apk add --update --no-cache \
