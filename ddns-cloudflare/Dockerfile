@@ -14,14 +14,14 @@ COPY ./src/* .
 
 RUN apk add --no-cache git \
     && go install \
-    && go build -o app ./appsrc/*
+    && go build -o app .
 
 #######
 # RUN #
 #######
 FROM alpine:${ALPINE_VERSION}
 
-COPY --from=build /go/app /app
+COPY --from=build /go/src/app/app /app
 
 RUN mkdir -p /etc/crontabs/ \
     && echo "*/15   *   *   *   *   /app" > /etc/crontabs/root

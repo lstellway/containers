@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"strings"
@@ -40,34 +41,41 @@ func main() {
 /**
  * Point A record to IP address
  */
-func setDnsRecord(api *cloudflare.API, r string, ip string) {
-	// Initialize DNS record
-	record := cloudflare.DNSRecord{
-		Type: "A",
-		Name: r,
-	}
+func setDnsRecord(api *cloudflare.API, name string, ip string) {
+	zoneId := os.Getenv("CF_ZONE_ID")
+	zoneInfo := cloudflare.ZoneIdentifier(zoneId)
 
-	// Search for existing DNS record
-	records, err := api.DNSRecords(os.Getenv("CF_ZONE_ID"), record)
+	// Find matching DNS records
+	listDnsParams := cloudflare.ListDNSRecordsParams{
+		Name: name,
+	}
+	records, result, err := api.ListDNSRecords(context.Background(), zoneInfo, listDnsParams)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	if len(records) > 0 {
+	if result.Count > 0 {
 		// Update existing record
-		record = records[0]
-		record.Content = ip
+		updateDnsParams := cloudflare.UpdateDNSRecordParams{
+			ID: records[0].ID,
+			Content: ip,
+		}
 
-		err := api.UpdateDNSRecord(os.Getenv("CF_ZONE_ID"), record.ID, record)
+		_, err := api.UpdateDNSRecord(context.Background(), zoneInfo, updateDnsParams)
 		reportResult("update", err)
 	} else {
-		// Create new record
-		record.Content = ip
-		record.Proxiable = true
-		record.Proxied = true
+		// Create a new DNS record
+		proxied := true
+		createDnsParams := cloudflare.CreateDNSRecordParams{
+			Type: "A",
+			Name: name,
+			Content: ip,
+			Proxiable: true,
+			Proxied: &proxied,
+		}
 
-		_, err := api.CreateDNSRecord(os.Getenv("CF_ZONE_ID"), record)
+		_, err := api.CreateDNSRecord(context.Background(), zoneInfo, createDnsParams)
 		reportResult("create", err)
 	}
 }

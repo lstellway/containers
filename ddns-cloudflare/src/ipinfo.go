@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 )
@@ -25,7 +25,7 @@ func getIp() (string, error) {
 	defer resp.Body.Close()
 
 	// Read response body
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.New("Could not read response body.")
 	}
