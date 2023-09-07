@@ -13,7 +13,7 @@ RUN \
     apk add --update nodejs npm make g++ git
 
 RUN \
-    && git clone "${WRITEFREELY_REPO}" . \
+    git clone "${WRITEFREELY_REPO}" . \
     && npm install -g less less-plugin-clean-css \
     && cat ossl_legacy.cnf > /etc/ssl/openssl.cnf \
     && make build \
