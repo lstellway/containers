@@ -25,7 +25,7 @@
     -   S3 path where to store backup files
 -   `S3_LATEST_FILE_PATH`
     -   S3 path where to store latest backup
--   `S3_ENDPOINT`
+-   `S3_ENDPOINT_URL`
     -   S3 endpoint
 -   `S3_ACCESS_KEY`
     -   S3 access key
