@@ -103,9 +103,9 @@ function _backup() {
 
         # Build upload file location
         UPLOAD_LOCATION="${S3_BUCKET_PATH}/${FILE_NAME}"
-        UPLOAD_LOCATION=${UPLOAD_LOCATION//{year}/$DATE_YEAR}
-        UPLOAD_LOCATION=${UPLOAD_LOCATION//{month}/$DATE_MONTH}
-        UPLOAD_LOCATION=${UPLOAD_LOCATION//{day}/$DATE_DAY}
+        UPLOAD_LOCATION=$(echo $UPLOAD_LOCATION | sed "s/{year}/$DATE_YEAR/g")
+        UPLOAD_LOCATION=$(echo $UPLOAD_LOCATION | sed "s/{month}/$DATE_MONTH/g")
+        UPLOAD_LOCATION=$(echo $UPLOAD_LOCATION | sed "s/{day}/$DATE_DAY/g")
 
         $AWS s3 cp "${FILE}" "${UPLOAD_LOCATION}" \
             && return 0 \
