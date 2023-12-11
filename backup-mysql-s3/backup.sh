@@ -98,7 +98,7 @@ function _backup() {
         FILE="${WORKDIR}/${FILE_NAME}"
 
         if [ -n "${S3_LATEST_FILE_PATH}" ]; then
-            $AWS s3 cp "${FILE}" "s3://${S3_LATEST_FILE_PATH}"
+            $AWS s3 cp "${FILE}" "${S3_LATEST_FILE_PATH}"
         fi
 
         # Build upload file location
