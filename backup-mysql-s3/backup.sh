@@ -102,7 +102,7 @@ function _backup() {
         fi
 
         # Build upload file location
-        UPLOAD_LOCATION="s3://${S3_BUCKET_PATH}/${FILE_NAME}"
+        UPLOAD_LOCATION="${S3_BUCKET_PATH}/${FILE_NAME}"
         UPLOAD_LOCATION=${UPLOAD_LOCATION//{year}/$DATE_YEAR}
         UPLOAD_LOCATION=${UPLOAD_LOCATION//{month}/$DATE_MONTH}
         UPLOAD_LOCATION=${UPLOAD_LOCATION//{day}/$DATE_DAY}
