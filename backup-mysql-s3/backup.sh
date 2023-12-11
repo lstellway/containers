@@ -3,8 +3,11 @@
 # Create temporary directory
 DIR=$(mktemp -d)
 DATE_VALUE=$(date '-R')
-DATE_DAY=$(date '+%F')
 DATE_TIME=$(date '+%FT%T')
+
+DATE_YEAR=$(date +%Y)
+DATE_MONTH=$(date +%m)
+DATE_DAY=$(date +%m)
 
 # Helper to fail with message
 _fatal() {
@@ -98,8 +101,12 @@ function _backup() {
             $AWS s3 cp "${FILE}" "s3://${S3_LATEST_FILE_PATH}"
         fi
 
-        # Upload file
-        UPLOAD_LOCATION="s3://${S3_BUCKET_PATH}/${DATE_DAY}/${FILE_NAME}"
+        # Build upload file location
+        UPLOAD_LOCATION="s3://${S3_BUCKET_PATH}/${FILE_NAME}"
+        UPLOAD_LOCATION=${UPLOAD_LOCATION//{year}/$DATE_YEAR}
+        UPLOAD_LOCATION=${UPLOAD_LOCATION//{month}/$DATE_MONTH}
+        UPLOAD_LOCATION=${UPLOAD_LOCATION//{day}/$DATE_DAY}
+
         $AWS s3 cp "${FILE}" "${UPLOAD_LOCATION}" \
             && return 0 \
             || return 1
