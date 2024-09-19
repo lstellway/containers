@@ -1,92 +1,73 @@
 name: Build Docker Image
 
 on:
-  push:
-    tags: ["*"]
-  workflow_dispatch:
-    inputs:
-      build_tag:
-        required: true
-        description: The full container image tag (eg. `docker-gitlab-runner_0.1.0-alpha2`)
+    push:
+        # Tag matching with regex
+        # @see https://github.com/actions/runner/issues/1699#issuecomment-1046796067
+        tags:
+            # Stable
+            - "[0-9]+.[0-9]+.[0-9]+"
+            # Alpha
+            - "[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+"
+            # Beta
+            - "[0-9]+.[0-9]+.[0-9]+-beta[0-9]+"
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    build:
+        strategy:
+            matrix:
+                image_name:
+                    - backup-mysql-s3
+                    - ddns-cloudflare
+                    - digitalocean-floating-ip
+                    - docker-gitlab-runner
+                    - ipinfo
+                    - s3fs-fuse
+                    - sync-s3
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Extract variables
-        run: |
-          # Get the target tag from either:
-          # 1. The workflow input variable
-          # 2. The build tag
-          [ -n "${{ github.event.inputs.build_tag }}" ] && SOURCE_TAG="${{ github.event.inputs.build_tag }}" || SOURCE_TAG="${GITHUB_REF##*/}"
-          echo "SOURCE_TAG=${SOURCE_TAG}" >> $GITHUB_ENV
+            - name: Extract variables
+              run: |
+                  # Relative path to the Dockerfile
+                  DOCKERFILE="./${{ matrix.image_name }}/Dockerfile"
+                  echo "DOCKERFILE=${DOCKERFILE}" >> $GITHUB_ENV
 
-          # Target image name
-          IMAGE_NAME=$(echo $SOURCE_TAG | cut -d'_' -f 1)
-          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+                  # Parse metadata from JSON
+                  [ -f "./${{ matrix.image_name }}/image.json" ] && IMAGE_META=$(cat "./${{ matrix.image_name }}/image.json" | tr '\n' ' ') || IMAGE_META="{}"
+                  echo "IMAGE_META=${IMAGE_META}" >> $GITHUB_ENV
 
-          # Target version (tag)
-          IMAGE_VERSION=$(echo $SOURCE_TAG | cut -d'_' -f 2)
-          echo "IMAGE_VERSION=${IMAGE_VERSION}" >> $GITHUB_ENV
+            - name: Parse image meta
+              run: |
+                  # Determine build platforms
+                  DOCKER_PLATFORMS="${{ fromJson(env.IMAGE_META).platforms || '' }}"
+                  [ -n "${DOCKER_PLATFORMS}" ] || DOCKER_PLATFORMS="linux/amd64,linux/arm64"
+                  echo "DOCKER_PLATFORMS=${DOCKER_PLATFORMS}" >> $GITHUB_ENV
 
-          # Relative path to the Dockerfile
-          DOCKERFILE="./${IMAGE_NAME}/Dockerfile"
-          echo "DOCKERFILE=${DOCKERFILE}" >> $GITHUB_ENV
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
 
-          # Ensure the Dockerfile exists
-          ([ -f "${DOCKERFILE}" ] && [ -n "${IMAGE_VERSION}" ]) && PROCESS_IMAGE="true" || PROCESS_IMAGE="false"
-          echo "PROCESS_IMAGE=${PROCESS_IMAGE}" >> $GITHUB_ENV
+            - name: Set up Docker Buildx
+              id: buildx
+              uses: docker/setup-buildx-action@v3
 
-          # Parse metadata from JSON
-          [ -f "./${IMAGE_NAME}/image.json" ] && IMAGE_META=$(cat "./${IMAGE_NAME}/image.json" | tr '\n' ' ') || IMAGE_META="{}"
-          echo "IMAGE_META=${IMAGE_META}" >> $GITHUB_ENV
+            - name: Available platforms
+              run: echo ${{ steps.buildx.outputs.platforms }}
 
-      - name: Parse image meta
-        run: |
-          # Determine build platforms
-          DOCKER_PLATFORMS="${{ fromJson(env.IMAGE_META).platforms || '' }}"
-          [ -n "${DOCKER_PLATFORMS}" ] || DOCKER_PLATFORMS="linux/amd64,linux/arm64"
-          echo "DOCKER_PLATFORMS=${DOCKER_PLATFORMS}" >> $GITHUB_ENV
+            - name: Login to GitHub Container Registry
+              run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
-      - name: Dump variables
-        run: echo $GITHUB_ENV
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        if: ${{ env.PROCESS_IMAGE == 'true' }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        if: ${{ env.PROCESS_IMAGE == 'true' }}
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        if: ${{ env.PROCESS_IMAGE == 'true' }}
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          # password: ${{ github.token }}
-          password: ${{ secrets.GHCR_TOKEN }}
-          logout: true
-
-      # - name: Login to GitHub Container Registry
-      #   run: echo "${{ github.token }}" | docker login ghcr.io -u $ --password-stdin
-      #   if: ${{ env.DOCKERFILE_EXISTS == 'true' && env.PROCESS_IMAGE == 'true' }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        if: ${{ env.PROCESS_IMAGE == 'true' }}
-        with:
-          context: ${{ env.IMAGE_NAME }}
-          file: ${{ env.DOCKERFILE }}
-          push: true
-          # build-args: |
-          #   "ROOT_DIR=${{ secrets.ROOT_DIR }}"
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-
+            - name: Build and push
+              uses: docker/build-push-action@v5
+              with:
+                  cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+                  cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
+                  context: ${{ matrix.image_name }}
+                  file: ${{ env.DOCKERFILE }}
+                  push: true
+                  tags: |
+                      ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.ref_name }}
+                      ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
+                  platforms: ${{ env.DOCKER_PLATFORMS }}

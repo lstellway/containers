@@ -1,0 +1,32 @@
+.PHONY:
+
+latest-tag = $(shell git tag --sort=committerdate | tail -1)
+# $(shell) and $(eval) can be used to store and assign output
+# @see https://stackoverflow.com/a/54776239
+release-version = $(shell ./.dev/scripts/semver.sh $(1) $(latest-tag))
+release-tag = $(eval TAG=$(call release-version, $1))
+release = git tag $(TAG) \
+	&& git push origin $(TAG)
+
+latest:
+	@echo $(latest-tag)
+
+release-alpha:
+	@$(call release-tag, alpha)
+	@$(release)
+
+release-beta:
+	@$(call release-tag, beta)
+	@$(release)
+
+release-patch:
+	@$(call release-tag, patch)
+	@$(release)
+
+release-minor:
+	@$(call release-tag, minor)
+	@$(release)
+
+release-major:
+	@$(call release-tag, major)
+	@$(release)
