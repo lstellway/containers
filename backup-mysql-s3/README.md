@@ -46,3 +46,41 @@ It is recommended to create a MySQL user that only has read permissions on your 
 CREATE USER '{{DB_USER}}'@'%' IDENTIFIED BY '{{DB_PASS}}';
 GRANT LOCK TABLES, SELECT ON {{DB_NAME}}.* TO '{{DB_USER}}'@'%';
 ```
+
+## GitHub Actions
+
+You can use this container in a GitHub action to backup a database<br />
+_(note: the server host must be accessible via the GitHub action environment)_
+
+```yml
+name: Backup MySQL Databases
+
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: "0 2 * * *"
+
+jobs:
+    backup:
+        runs-on: ubuntu-latest
+        container:
+            image: ghcr.io/lstellway/backup-mysql-s3:0.1.0
+            env:
+                DB_HOST: ${{ secrets.DB_HOST }}
+                DB_PORT: ${{ secrets.DB_PORT }}
+                DB_PASS: ${{ secrets.DB_PASS }}
+                DB_USER: ${{ secrets.DB_USER }}
+                DB_SSL: "true"
+                BACKUP_DATABASES: database_name,another_name
+                S3_BUCKET_PATH: s3://backups/db/{year}/{month}
+                S3_LATEST_FILE_PATH: s3://backups/db/latest.tar.gz
+                S3_ENDPOINT_URL: https://example.s3provider.com
+                AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                AWS_DEFAULT_REGION: region
+            options: --cpus 1 --entrypoint "tail -f /dev/null"
+        steps:
+            - name: Execute backup script
+              run: |
+                  /etc/periodic/daily/backup
+```
